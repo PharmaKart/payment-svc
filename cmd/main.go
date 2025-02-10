@@ -10,7 +10,6 @@ import (
 	"github.com/PharmaKart/payment-svc/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"gorm.io/gorm"
 )
 
 func main() {
@@ -20,8 +19,16 @@ func main() {
 	// Load configurations
 	cfg := config.LoadConfig()
 
+	// Initialize database connection
+	db, err := utils.ConnectDB(cfg)
+	if err != nil {
+		utils.Logger.Fatal("Failed to connect to database", map[string]interface{}{
+			"error": err,
+		})
+	}
+
 	// Initialize repositories
-	paymentRepo := repositories.NewPaymentRepository(&gorm.DB{})
+	paymentRepo := repositories.NewPaymentRepository(db)
 
 	// Initialize order client
 	conn, err := grpc.NewClient(cfg.OrderServiceURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
