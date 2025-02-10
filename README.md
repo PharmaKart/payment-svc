@@ -47,6 +47,7 @@ Before setting up the service, ensure you have the following installed:
 - **Go** (for building and running the service)
 - **Protobuf Compiler** (`protoc`) for generating gRPC/protobuf files
 - **Stripe Account** (for API keys and sandbox testing)
+- **Stripe CLI** (optional, for local testing)
 
 ---
 
@@ -75,6 +76,12 @@ go mod tidy
 To build the service, run:
 ```bash
 make build
+```
+
+### 5. Run local stripe forwarder
+```bash
+stripe login
+stripe listen --forward-to localhost:8080/payment/webhook
 ```
 
 ---
@@ -109,6 +116,8 @@ ORDER_DB_USER=postgres
 ORDER_DB_PASSWORD=yourpassword
 ORDER_DB_NAME=pharmakartdb
 ORDER_SERVICE_ADDR=localhost:50053
+STRIPE_SECRET_KEY=your-stripe-secret-key
+GATEWAY_URL=http://localhost:8080
 ```
 
 ---

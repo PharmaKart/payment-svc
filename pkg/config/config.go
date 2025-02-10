@@ -12,6 +12,8 @@ type Config struct {
 	Port            string
 	DBConnString    string
 	OrderServiceURL string
+	StripeSecretKey string
+	GatewayURL      string
 }
 
 // LoadConfig loads configuration from environment variables or a .env file.
@@ -25,6 +27,8 @@ func LoadConfig() *Config {
 		Port:            getEnv("PORT", "50054"),
 		DBConnString:    getDBConnString(),
 		OrderServiceURL: getEnv("Order_SERVICE_URL", "localhost:50053"),
+		StripeSecretKey: getEnv("STRIPE_SECRET_KEY", "sk_test_4eC39HqLyjWDarjtT1zdp7dc"),
+		GatewayURL:      getEnv("GATEWAY_URL", "http://localhost:8080"),
 	}
 }
 

@@ -34,8 +34,10 @@ func main() {
 	orderClient := proto.NewOrderServiceClient(conn)
 	defer conn.Close()
 
+	// Initialize stripe key
+
 	// Initialize handlers
-	paymentHandler := handlers.NewPaymentHandler(paymentRepo, &orderClient)
+	paymentHandler := handlers.NewPaymentHandler(paymentRepo, &orderClient, cfg)
 
 	// Initialize grpc server
 	lis, err := net.Listen("tcp", ":"+cfg.Port)

@@ -6,7 +6,7 @@ import (
 )
 
 type PaymentRepository interface {
-	CreatePayment(payment *models.Payment) (string, error)
+	StorePayment(payment *models.Payment) error
 	GetPaymentByOrderID(orderID string) (*models.Payment, error)
 	GetPaymentByTransactionID(transactionID string) (*models.Payment, error)
 	GetPayment(paymentID string) (*models.Payment, error)
@@ -21,13 +21,8 @@ func NewPaymentRepository(db *gorm.DB) PaymentRepository {
 	return &paymentRepository{db}
 }
 
-func (r *paymentRepository) CreatePayment(payment *models.Payment) (string, error) {
-	// return r.db.Create(payment).Error
-	if err := r.db.Create(payment).Error; err != nil {
-		return "", err
-	}
-
-	return payment.TransactionID, nil
+func (r *paymentRepository) StorePayment(payment *models.Payment) error {
+	return r.db.Create(payment).Error
 }
 
 func (r *paymentRepository) GetPaymentByOrderID(orderID string) (*models.Payment, error) {

@@ -2,16 +2,22 @@ package services
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
 	"github.com/PharmaKart/payment-svc/internal/models"
 	"github.com/PharmaKart/payment-svc/internal/proto"
 	"github.com/PharmaKart/payment-svc/internal/repositories"
+	"github.com/PharmaKart/payment-svc/pkg/config"
+	"github.com/stripe/stripe-go/v81"
+	"github.com/stripe/stripe-go/v81/checkout/session"
 )
 
+type StripeResponse struct {
+	URL string
+}
+
 type PaymentService interface {
-	ProcessPayment(payment *models.Payment) (string, error)
+	GeneratePaymentURL(orderId string, customerId string) (StripeResponse, error)
+	StorePayment(payment *models.Payment) (string, error)
 	RefundPayment(transactionId string) error
 	GetPaymentByTransactionID(transactionID string) (*models.Payment, error)
 	GetPayment(paymentID string) (*models.Payment, error)
@@ -21,31 +27,83 @@ type PaymentService interface {
 type paymentService struct {
 	paymentRepo repositories.PaymentRepository
 	orderClient proto.OrderServiceClient
+	cfg         *config.Config
 }
 
-func NewPaymentService(paymentRepo repositories.PaymentRepository, orderService *proto.OrderServiceClient) PaymentService {
+func NewPaymentService(paymentRepo repositories.PaymentRepository, orderService *proto.OrderServiceClient, cfg *config.Config) PaymentService {
 	return &paymentService{
 		paymentRepo: paymentRepo,
 		orderClient: *orderService,
+		cfg:         cfg,
 	}
 }
 
-func (s *paymentService) ProcessPayment(payment *models.Payment) (string, error) {
-	payment, err := s.paymentRepo.GetPaymentByTransactionID(payment.TransactionID)
-	if err == nil {
-		return "", errors.New(fmt.Sprintf("payment already exists with transaction id %s", payment.TransactionID))
+func (s *paymentService) GeneratePaymentURL(orderID string, customerID string) (StripeResponse, error) {
+	stripe.Key = s.cfg.StripeSecretKey
+
+	order, err := s.orderClient.GetOrder(context.Background(), &proto.GetOrderRequest{
+		OrderId: orderID,
+	})
+	if err != nil {
+		return StripeResponse{}, err
 	}
 
-	payment, err = s.paymentRepo.GetPaymentByOrderID(payment.OrderID.String())
-	if err == nil {
-		return "", errors.New(fmt.Sprintf("payment already exists for order id %s", payment.OrderID.String()))
+	lineItems := []*stripe.CheckoutSessionLineItemParams{}
+
+	for _, item := range order.Items {
+		lineItems = append(lineItems, &stripe.CheckoutSessionLineItemParams{
+			PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
+				Currency: stripe.String("cad"),
+				ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
+					Name: stripe.String(item.ProductName),
+				},
+				UnitAmount: stripe.Int64(int64(item.Price)),
+			},
+			Quantity: stripe.Int64(int64(item.Quantity)),
+		})
 	}
 
-	transaction_id, err := s.paymentRepo.CreatePayment(payment)
+	params := &stripe.CheckoutSessionParams{
+		SuccessURL: stripe.String(s.cfg.GatewayURL + "/orders/" + orderID),
+		LineItems:  lineItems,
+		Customer:   stripe.String(customerID),
+		Metadata: map[string]string{
+			"order_id": orderID,
+		},
+		Mode: stripe.String(string(stripe.CheckoutSessionModePayment)),
+	}
+
+	session, err := session.New(params)
+	if err != nil {
+		return StripeResponse{}, err
+	}
+
+	return StripeResponse{
+		URL: session.URL,
+	}, nil
+}
+
+func (s *paymentService) StorePayment(payment *models.Payment) (string, error) {
+	err := s.paymentRepo.StorePayment(payment)
 	if err != nil {
 		return "", err
 	}
-	return transaction_id, nil
+
+	var status string
+	if payment.Status == "succeeded" {
+		status = "paid"
+	} else {
+		status = "payment_failed"
+	}
+
+	_, err = s.orderClient.UpdateOrderStatus(context.Background(), &proto.UpdateOrderStatusRequest{
+		OrderId: payment.OrderID.String(),
+		Status:  status,
+	})
+	if err != nil {
+		return "", err
+	}
+	return "Payment stored successfully", nil
 }
 
 func (s *paymentService) RefundPayment(transactionId string) error {
