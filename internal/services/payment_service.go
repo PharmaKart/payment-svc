@@ -42,7 +42,8 @@ func (s *paymentService) GeneratePaymentURL(orderID string, customerID string) (
 	stripe.Key = s.cfg.StripeSecretKey
 
 	order, err := s.orderClient.GetOrder(context.Background(), &proto.GetOrderRequest{
-		OrderId: orderID,
+		OrderId:    orderID,
+		CustomerId: "admin",
 	})
 	if err != nil {
 		return StripeResponse{}, err
@@ -57,7 +58,7 @@ func (s *paymentService) GeneratePaymentURL(orderID string, customerID string) (
 				ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
 					Name: stripe.String(item.ProductName),
 				},
-				UnitAmount: stripe.Int64(int64(item.Price)),
+				UnitAmount: stripe.Int64(int64(item.Price * 100)),
 			},
 			Quantity: stripe.Int64(int64(item.Quantity)),
 		})
@@ -66,9 +67,9 @@ func (s *paymentService) GeneratePaymentURL(orderID string, customerID string) (
 	params := &stripe.CheckoutSessionParams{
 		SuccessURL: stripe.String(s.cfg.GatewayURL + "/orders/" + orderID),
 		LineItems:  lineItems,
-		Customer:   stripe.String(customerID),
 		Metadata: map[string]string{
-			"order_id": orderID,
+			"order_id":    orderID,
+			"customer_id": customerID,
 		},
 		Mode: stripe.String(string(stripe.CheckoutSessionModePayment)),
 	}
