@@ -5,6 +5,8 @@ ORDER_SERVICE_NAME = order-svc
 GO = go
 PROTO_DIR = internal/proto
 PROTO_FILE = $(PROTO_DIR)/payment.proto
+WIN_PROTO_DIR = internal\proto
+WIN_PROTO_FILE = $(WIN_PROTO_DIR)\payment.proto
 PROTO_OUT = $(PROTO_DIR)
 PORT = 50052
 
@@ -29,6 +31,14 @@ proto:
 	cp $(PROTO_DIR)/payment_grpc.pb.go ../$(GATEWAY_NAME)/internal/proto/payment_grpc.pb.go
 	cp $(PROTO_DIR)/payment.pb.go ../$(ORDER_SERVICE_NAME)/internal/proto/payment.pb.go
 	cp $(PROTO_DIR)/payment_grpc.pb.go ../$(ORDER_SERVICE_NAME)/internal/proto/payment_grpc.pb.go
+
+win-proto:
+	@echo "Generating Go code from $(WIN_PROTO_FILE)..."
+	protoc --go_out=$(WIN_PROTO_DIR) --go-grpc_out=$(WIN_PROTO_DIR) $(WIN_PROTO_FILE)
+	xcopy $(WIN_PROTO_DIR)\payment.pb.go ..\$(GATEWAY_NAME)\internal\proto\payment.pb.go /i /Y
+	xcopy $(WIN_PROTO_DIR)\payment_grpc.pb.go ..\$(GATEWAY_NAME)\internal\proto\payment_grpc.pb.go /i /Y
+	xcopy $(WIN_PROTO_DIR)\payment.pb.go ..\$(ORDER_SERVICE_NAME)\internal\proto\payment.pb.go /i /Y
+	xcopy $(WIN_PROTO_DIR)\payment_grpc.pb.go ..\$(ORDER_SERVICE_NAME)\internal\proto\payment_grpc.pb.go /i /Y
 
 # Clean up build artifacts
 clean:
