@@ -65,14 +65,14 @@ func (s *paymentService) GeneratePaymentURL(orderID string, customerID string) (
 	}
 
 	params := &stripe.CheckoutSessionParams{
-		SuccessURL: stripe.String(s.cfg.GatewayURL + "/orders/" + orderID),
-		LineItems:  lineItems,
-		Metadata: map[string]string{
-			"order_id":    orderID,
-			"customer_id": customerID,
-		},
-		Mode: stripe.String(string(stripe.CheckoutSessionModePayment)),
+		SuccessURL:        stripe.String(s.cfg.FrontendURL + "/orders/" + orderID),
+		LineItems:         lineItems,
+		ClientReferenceID: stripe.String(orderID),
+		Mode:              stripe.String(string(stripe.CheckoutSessionModePayment)),
 	}
+
+	params.AddMetadata("customer_id", customerID)
+	params.AddMetadata("order_id", orderID)
 
 	session, err := session.New(params)
 	if err != nil {
@@ -91,7 +91,7 @@ func (s *paymentService) StorePayment(payment *models.Payment) (string, error) {
 	}
 
 	var status string
-	if payment.Status == "succeeded" {
+	if payment.Status == "complete" {
 		status = "paid"
 	} else {
 		status = "payment_failed"

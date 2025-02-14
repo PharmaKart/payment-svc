@@ -110,14 +110,14 @@ The service will be available at:
 The service requires the following environment variables. Create a `.env` file in the `payment-svc` directory with the following:
 
 ```env
-ORDER_DB_HOST=postgres
-ORDER_DB_PORT=5432
-ORDER_DB_USER=postgres
-ORDER_DB_PASSWORD=yourpassword
-ORDER_DB_NAME=pharmakartdb
-ORDER_SERVICE_ADDR=localhost:50053
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_NAME=pharmakartdb
+PORT=50054
+FRONTEND_URL=http://localhost:3000
 STRIPE_SECRET_KEY=your-stripe-secret-key
-GATEWAY_URL=http://localhost:8080
 ```
 
 ---
