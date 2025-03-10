@@ -57,7 +57,8 @@ func (h *paymentHandler) GeneratePaymentURL(ctx context.Context, req *proto.Gene
 	}
 
 	return &proto.GeneratePaymentURLResponse{
-		Url: resp.URL,
+		Success: true,
+		Url:     resp.URL,
 	}, nil
 }
 
@@ -65,6 +66,7 @@ func (h *paymentHandler) StorePayment(ctx context.Context, req *proto.StorePayme
 	orderId, err := uuid.Parse(req.OrderId)
 	if err != nil {
 		return &proto.StorePaymentResponse{
+			Success: false,
 			Error: &proto.Error{
 				Type:    string(errors.ValidationError),
 				Message: "Invalid order ID",
@@ -76,6 +78,7 @@ func (h *paymentHandler) StorePayment(ctx context.Context, req *proto.StorePayme
 	customerId, err := uuid.Parse(req.CustomerId)
 	if err != nil {
 		return &proto.StorePaymentResponse{
+			Success: false,
 			Error: &proto.Error{
 				Type:    string(errors.ValidationError),
 				Message: "Invalid customer ID",
@@ -95,6 +98,7 @@ func (h *paymentHandler) StorePayment(ctx context.Context, req *proto.StorePayme
 	if err != nil {
 		if appErr, ok := errors.IsAppError(err); ok {
 			return &proto.StorePaymentResponse{
+				Success: false,
 				Error: &proto.Error{
 					Type:    string(appErr.Type),
 					Message: appErr.Message,
@@ -103,6 +107,7 @@ func (h *paymentHandler) StorePayment(ctx context.Context, req *proto.StorePayme
 			}, nil
 		}
 		return &proto.StorePaymentResponse{
+			Success: false,
 			Error: &proto.Error{
 				Type:    string(errors.InternalError),
 				Message: "An unexpected error occurred",
@@ -110,7 +115,10 @@ func (h *paymentHandler) StorePayment(ctx context.Context, req *proto.StorePayme
 		}, nil
 	}
 
-	return &proto.StorePaymentResponse{Message: message}, nil
+	return &proto.StorePaymentResponse{
+		Success: true,
+		Message: message,
+	}, nil
 }
 
 func (h *paymentHandler) RefundPayment(ctx context.Context, req *proto.RefundPaymentRequest) (*proto.RefundPaymentResponse, error) {
@@ -118,6 +126,7 @@ func (h *paymentHandler) RefundPayment(ctx context.Context, req *proto.RefundPay
 	if err != nil {
 		if appErr, ok := errors.IsAppError(err); ok {
 			return &proto.RefundPaymentResponse{
+				Success: false,
 				Error: &proto.Error{
 					Type:    string(appErr.Type),
 					Message: appErr.Message,
@@ -126,6 +135,7 @@ func (h *paymentHandler) RefundPayment(ctx context.Context, req *proto.RefundPay
 			}, nil
 		}
 		return &proto.RefundPaymentResponse{
+			Success: false,
 			Error: &proto.Error{
 				Type:    string(errors.InternalError),
 				Message: "An unexpected error occurred",
@@ -133,7 +143,9 @@ func (h *paymentHandler) RefundPayment(ctx context.Context, req *proto.RefundPay
 		}, nil
 	}
 
-	return &proto.RefundPaymentResponse{}, nil
+	return &proto.RefundPaymentResponse{
+		Success: true,
+	}, nil
 }
 
 func (h *paymentHandler) GetPaymentByTransactionID(ctx context.Context, req *proto.GetPaymentByTransactionIDRequest) (*proto.GetPaymentResponse, error) {
@@ -141,6 +153,7 @@ func (h *paymentHandler) GetPaymentByTransactionID(ctx context.Context, req *pro
 	if err != nil {
 		if appErr, ok := errors.IsAppError(err); ok {
 			return &proto.GetPaymentResponse{
+				Success: false,
 				Error: &proto.Error{
 					Type:    string(appErr.Type),
 					Message: appErr.Message,
@@ -150,6 +163,7 @@ func (h *paymentHandler) GetPaymentByTransactionID(ctx context.Context, req *pro
 		}
 
 		return &proto.GetPaymentResponse{
+			Success: false,
 			Error: &proto.Error{
 				Type:    string(errors.InternalError),
 				Message: "An unexpected error occurred",
@@ -161,6 +175,7 @@ func (h *paymentHandler) GetPaymentByTransactionID(ctx context.Context, req *pro
 
 	if customerId != "admin" && payment.CustomerID.String() != customerId {
 		return &proto.GetPaymentResponse{
+			Success: false,
 			Error: &proto.Error{
 				Type:    string(errors.AuthError),
 				Message: "You are not authorized to view this payment",
@@ -169,6 +184,7 @@ func (h *paymentHandler) GetPaymentByTransactionID(ctx context.Context, req *pro
 	}
 
 	return &proto.GetPaymentResponse{
+		Success:       true,
 		PaymentId:     payment.ID.String(),
 		OrderId:       payment.OrderID.String(),
 		CustomerId:    payment.CustomerID.String(),
@@ -183,6 +199,7 @@ func (h *paymentHandler) GetPayment(ctx context.Context, req *proto.GetPaymentRe
 	if err != nil {
 		if appErr, ok := errors.IsAppError(err); ok {
 			return &proto.GetPaymentResponse{
+				Success: false,
 				Error: &proto.Error{
 					Type:    string(appErr.Type),
 					Message: appErr.Message,
@@ -192,6 +209,7 @@ func (h *paymentHandler) GetPayment(ctx context.Context, req *proto.GetPaymentRe
 		}
 
 		return &proto.GetPaymentResponse{
+			Success: false,
 			Error: &proto.Error{
 				Type:    string(errors.InternalError),
 				Message: "An unexpected error occurred",
@@ -203,6 +221,7 @@ func (h *paymentHandler) GetPayment(ctx context.Context, req *proto.GetPaymentRe
 
 	if customerId != "admin" && payment.CustomerID.String() != customerId {
 		return &proto.GetPaymentResponse{
+			Success: false,
 			Error: &proto.Error{
 				Type:    string(errors.AuthError),
 				Message: "You are not authorized to view this payment",
@@ -211,6 +230,7 @@ func (h *paymentHandler) GetPayment(ctx context.Context, req *proto.GetPaymentRe
 	}
 
 	return &proto.GetPaymentResponse{
+		Success:       true,
 		PaymentId:     payment.ID.String(),
 		OrderId:       payment.OrderID.String(),
 		CustomerId:    payment.CustomerID.String(),
@@ -225,6 +245,7 @@ func (h *paymentHandler) GetPaymentByOrderID(ctx context.Context, req *proto.Get
 	if err != nil {
 		if appErr, ok := errors.IsAppError(err); ok {
 			return &proto.GetPaymentResponse{
+				Success: false,
 				Error: &proto.Error{
 					Type:    string(appErr.Type),
 					Message: appErr.Message,
@@ -234,6 +255,7 @@ func (h *paymentHandler) GetPaymentByOrderID(ctx context.Context, req *proto.Get
 		}
 
 		return &proto.GetPaymentResponse{
+			Success: false,
 			Error: &proto.Error{
 				Type:    string(errors.InternalError),
 				Message: "An unexpected error occurred",
@@ -245,6 +267,7 @@ func (h *paymentHandler) GetPaymentByOrderID(ctx context.Context, req *proto.Get
 
 	if customerId != "admin" && payment.CustomerID.String() != customerId {
 		return &proto.GetPaymentResponse{
+			Success: false,
 			Error: &proto.Error{
 				Type:    string(errors.AuthError),
 				Message: "You are not authorized to view this payment",
@@ -253,6 +276,7 @@ func (h *paymentHandler) GetPaymentByOrderID(ctx context.Context, req *proto.Get
 	}
 
 	return &proto.GetPaymentResponse{
+		Success:       true,
 		PaymentId:     payment.ID.String(),
 		OrderId:       payment.OrderID.String(),
 		CustomerId:    payment.CustomerID.String(),
