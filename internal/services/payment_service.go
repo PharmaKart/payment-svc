@@ -64,6 +64,19 @@ func (s *paymentService) GeneratePaymentURL(orderID string, customerID string) (
 		})
 	}
 
+	if order.ShippingCost > 0 {
+		lineItems = append(lineItems, &stripe.CheckoutSessionLineItemParams{
+			PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
+				Currency: stripe.String("cad"),
+				ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
+					Name: stripe.String("Shipping"),
+				},
+				UnitAmount: stripe.Int64(int64(order.ShippingCost * 100)),
+			},
+			Quantity: stripe.Int64(1),
+		})
+	}
+
 	params := &stripe.CheckoutSessionParams{
 		SuccessURL:        stripe.String(s.cfg.FrontendURL + "/orders/" + orderID),
 		LineItems:         lineItems,
@@ -98,8 +111,9 @@ func (s *paymentService) StorePayment(payment *models.Payment) (string, error) {
 	}
 
 	_, err = s.orderClient.UpdateOrderStatus(context.Background(), &proto.UpdateOrderStatusRequest{
-		OrderId: payment.OrderID.String(),
-		Status:  status,
+		OrderId:    payment.OrderID.String(),
+		CustomerId: "payment_service",
+		Status:     status,
 	})
 	if err != nil {
 		return "", err
