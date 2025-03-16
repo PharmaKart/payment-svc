@@ -51,7 +51,7 @@ func (h *paymentHandler) GeneratePaymentURL(ctx context.Context, req *proto.Gene
 			Success: false,
 			Error: &proto.Error{
 				Type:    string(errors.InternalError),
-				Message: "An unexpected error occurred",
+				Message: err.Error(),
 			},
 		}, nil
 	}
