@@ -26,7 +26,7 @@ func LoadConfig() *Config {
 	return &Config{
 		Port:            getEnv("PORT", "50054"),
 		DBConnString:    getDBConnString(),
-		OrderServiceURL: getEnv("Order_SERVICE_URL", "localhost:50053"),
+		OrderServiceURL: getEnv("ORDER_SERVICE_URL", "localhost:50053"),
 		StripeSecretKey: getEnv("STRIPE_SECRET_KEY", "sk_test_4eC39HqLyjWDarjtT1zdp7dc"),
 		FrontendURL:     getEnv("FRONTEND_URL", "http://localhost:3000"),
 	}
